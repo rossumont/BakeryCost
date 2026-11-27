@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bakery Cost Calculator</title>
+<style>
+  :root{
+    --bg:#fff8f0; --card:#ffffff; --ink:#3b2a20; --muted:#8a7363;
+    --brand:#c8743a; --brand2:#e9a86b; --line:#f0e0d0; --good:#2f8f4e; --bad:#c0392b; --soft:#fdf0e3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Sarabun",sans-serif;font-size:16px}
+  body{display:flex;flex-direction:column;min-height:100vh}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:12px 16px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .top{position:sticky;top:0;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  header h1{font-size:1.2rem;margin:0;flex:1;min-width:180px}
+  header button{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.5);
+    border-radius:20px;padding:6px 12px;font-size:.9rem;cursor:pointer}
+  nav{display:flex;background:#fff;border-bottom:2px solid var(--line);overflow-x:auto}
+  nav button{flex:1;min-width:90px;border:none;background:none;padding:12px 6px;font-size:.95rem;color:var(--muted);
+    border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+  nav button.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:700}
+  main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:16px}
+  .hint{background:var(--soft);border-left:4px solid var(--brand2);padding:10px 12px;border-radius:8px;
+    color:var(--muted);font-size:.9rem;margin-bottom:14px;line-height:1.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;
+    box-shadow:0 2px 6px rgba(120,70,30,.05)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .row > label{flex:1;min-width:110px}
+  label{display:block;font-size:.8rem;color:var(--muted)}
+  input,select{width:100%;padding:9px 10px;border:1px solid #e3cdb8;border-radius:8px;font-size:1rem;
+    background:#fff;color:var(--ink);margin-top:3px;font-family:inherit;min-width:0}
+  input[type=datetime-local]{-webkit-appearance:none;appearance:none;min-height:44px;display:block}
+  input:focus,select:focus{outline:2px solid var(--brand2);border-color:var(--brand2)}
+  .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:1rem;cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--brand);border:1px dashed var(--brand)}
+  .btn.small{padding:6px 10px;font-size:.85rem}
+  .ico{font-size:1.3rem;padding:6px 4px;text-align:center}
+  .del{background:none;border:none;color:var(--bad);font-size:1.3rem;cursor:pointer;padding:6px 8px}
+  .calc{font-size:.85rem;color:var(--good);margin-top:6px}
+  .ingline{display:grid;grid-template-columns:2fr 1fr auto auto;gap:6px;align-items:end;margin-bottom:6px}
+  .ingline .cost{font-size:.85rem;color:var(--muted);min-width:70px;text-align:right;padding-bottom:10px}
+  h3{margin:0 0 10px;font-size:1.05rem;color:var(--brand)}
+  h4{margin:14px 0 8px;font-size:.95rem}
+  .summary{background:var(--soft);border-radius:10px;padding:12px;margin-top:12px}
+  .summary table{width:100%;border-collapse:collapse}
+  .summary td{padding:4px 0;font-size:.95rem}
+  .summary td:last-child{text-align:right;font-weight:600}
+  .big{font-size:1.15rem;color:var(--brand)}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .stat .v{font-size:1.3rem;font-weight:700;color:var(--brand)}
+  .stat .k{font-size:.8rem;color:var(--muted)}
+  .list{width:100%;border-collapse:collapse;font-size:.9rem}
+  .list th,.list td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .list td.n,.list th.n{text-align:right}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:14px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  @media (max-width:520px){ .ingline{grid-template-columns:1fr 80px auto} .ingline .cost{grid-column:1/3;text-align:left;padding:0} }
+</style>
+</head>
+<body>
+<div class="top"><header>
+  <h1>🧁 <span data-t="title"></span></h1>
+  <button onclick="toggleLang()" id="langBtn"></button>
+  <button onclick="exportData()" data-t="backup"></button>
+  <button onclick="document.getElementById('imp').click()" data-t="restore"></button>
+  <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+</header>
+<nav id="tabs"></nav></div>
+<main id="app"></main>
+<footer data-t="footer"></footer>
+
+<script>
+const KEY='bakeryCost_v1';
+const T={
+ en:{title:'Bakery Cost Calculator',backup:'⬇ Backup',restore:'⬆ Restore',
+  tabIng:'🥚 Ingredients',tabRec:'🍰 Recipes',tabOh:'⛽ Other Costs',tabSale:'🧺 Batches & Sales',newBatch:'New batch (just baked)',bakedOn:'Baked on',addBatch:'+ Start batch',openB:'On sale now',closedB:'Finished batches',sellNow:'+ Sell',closeB:'Finish batch',closeConfirm:'Finish this batch? Unsold pieces will count as waste: ',reopen:'Reopen',waste:'Waste',inStock:'Pieces on hand',noRec:'Add a recipe in the Recipes tab first.',soldOn:'Sold on',tabSum:'📊 Summary',byItem:'By item',pct:'Profit %',onHand:'On hand now',daily:'Daily',monthly:'Monthly',period:'Period',hintSum:'Sales and cost count on the day pieces are sold. Waste counts on the day a batch is finished. Batches still on sale are not counted as waste yet.',
+  hintIng:'Enter what you buy: item, price paid, and pack size. The app works out cost per gram / ml / piece automatically.',
+  name:'Item name',bought:'Bought on (date & time)',price:'Price paid (฿)',size:'Pack size',unit:'Unit',addIng:'+ Add ingredient',
+  perUnit:'Cost per',sample:'Load example data',empty:'Nothing here yet.',
+  hintRec:'Build each recipe: choose ingredients and how much you use per batch, plus how many pieces the batch makes.',
+  recName:'Recipe name',yield:'Pieces per batch',addRec:'+ Add recipe',ingUsed:'Ingredients used per batch',
+  pickIng:'— choose ingredient —',amount:'Amount',addLine:'+ Add ingredient line',
+  extras:'Extra costs',pack:'📦 Box / bag per piece (฿)',gas:'🔥 Gas / electricity per batch (฿)',other:'➕ Other per batch (฿)',icon:'Icon',
+  ingCost:'Ingredients per batch',batchCost:'Total cost per batch',ohPiece:'Share of other costs per piece',
+  costPiece:'Real cost per piece',sellPrice:'Your selling price per piece (฿)',profitPiece:'Profit per piece',
+  profitBatch:'Profit per batch',margin:'Profit margin',target:'Target profit %',suggest:'Suggested price',
+  noIng:'Add ingredients in the Ingredients tab first.',
+  hintOh:'Costs that aren\'t in one recipe: fuel for shopping trips, delivery, market stall fee, phone, etc. Enter a monthly amount, and how many pieces you make per month. The app spreads these costs over every piece.',
+  ohName:'Expense',ohAmt:'Per month (฿)',addOh:'+ Add expense',ppm:'Pieces made per month (all recipes)',
+  ohTotal:'Total other costs per month',ohEach:'Added to each piece',
+  hintSale:'1) After baking, start a batch. 2) Each day, record sales into that batch. 3) When sold out or no longer fresh, finish the batch: leftovers count as waste.',
+  date:'Date & time',recipe:'Recipe',qty:'Pieces sold',made:'Pieces made',madeK:'Made',soldK:'Sold',left:'Left over',sellRate:'Sold %',unitPrice:'Price each (฿)',addSale:'+ Record sale',
+  month:'Month',all:'All',revenue:'Sales',cost:'Cost',profit:'Profit',pieces:'Pieces',
+  confirmDel:'Delete this item?',restored:'Data restored!',badFile:'Could not read this file.',
+  piece:'piece',footer:'Data is saved on this device only. Use Backup regularly.'},
+ th:{title:'คำนวณต้นทุนขนม',backup:'⬇ สำรองข้อมูล',restore:'⬆ กู้ข้อมูล',
+  tabIng:'🥚 วัตถุดิบ',tabRec:'🍰 สูตรขนม',tabOh:'⛽ ค่าใช้จ่ายอื่น',tabSale:'🧺 ล็อต & ยอดขาย',newBatch:'เปิดล็อตใหม่ (เพิ่งอบเสร็จ)',bakedOn:'วันเวลาที่ทำ',addBatch:'+ เปิดล็อต',openB:'กำลังขาย',closedB:'ล็อตที่ปิดแล้ว',sellNow:'+ ขาย',closeB:'ปิดล็อต',closeConfirm:'ปิดล็อตนี้ใช่ไหม? ชิ้นที่เหลือจะนับเป็นของเสีย: ',reopen:'เปิดล็อตอีกครั้ง',waste:'ของเสีย',inStock:'ขนมที่ยังเหลือขาย',noRec:'ไปเพิ่มสูตรในแท็บ “สูตรขนม” ก่อนนะ',soldOn:'วันเวลาที่ขาย',tabSum:'📊 สรุป',byItem:'แยกตามขนม',pct:'กำไร %',onHand:'เหลือตอนนี้',daily:'รายวัน',monthly:'รายเดือน',period:'ช่วงเวลา',hintSum:'ยอดขายและต้นทุนนับตามวันที่ขายได้จริง ของเสียนับในวันที่กดปิดล็อต ล็อตที่ยังขายอยู่จะยังไม่นับของเสีย',
+  hintIng:'กรอกของที่ซื้อมา: ชื่อ ราคาที่จ่าย และขนาดห่อ แอปจะคิดราคาต่อกรัม / มล. / ชิ้น ให้เอง',
+  name:'ชื่อวัตถุดิบ',bought:'วันเวลาที่ซื้อ',price:'ราคาที่จ่าย (บาท)',size:'ขนาดห่อ',unit:'หน่วย',addIng:'+ เพิ่มวัตถุดิบ',
+  perUnit:'ราคาต่อ',sample:'ใส่ข้อมูลตัวอย่าง',empty:'ยังไม่มีข้อมูล',
+  hintRec:'สร้างสูตรขนม: เลือกวัตถุดิบ ใส่ปริมาณที่ใช้ต่อ 1 รอบ และรอบนี้ได้ขนมกี่ชิ้น',
+  recName:'ชื่อขนม',yield:'ได้กี่ชิ้นต่อรอบ',addRec:'+ เพิ่มสูตร',ingUsed:'วัตถุดิบที่ใช้ต่อรอบ',
+  pickIng:'— เลือกวัตถุดิบ —',amount:'ปริมาณ',addLine:'+ เพิ่มวัตถุดิบในสูตร',
+  extras:'ค่าใช้จ่ายเพิ่ม',pack:'📦 กล่อง/ถุง ต่อชิ้น (บาท)',gas:'🔥 ค่าแก๊ส/ไฟ ต่อรอบ (บาท)',other:'➕ อื่นๆ ต่อรอบ (บาท)',icon:'ไอคอน',
+  ingCost:'ค่าวัตถุดิบต่อรอบ',batchCost:'ต้นทุนรวมต่อรอบ',ohPiece:'ค่าใช้จ่ายอื่นที่หารมาต่อชิ้น',
+  costPiece:'ต้นทุนจริงต่อชิ้น',sellPrice:'ราคาขายต่อชิ้น (บาท)',profitPiece:'กำไรต่อชิ้น',
+  profitBatch:'กำไรต่อรอบ',margin:'กำไรคิดเป็น',target:'อยากได้กำไรกี่ %',suggest:'ราคาที่ควรขาย',
+  noIng:'ไปเพิ่มวัตถุดิบในแท็บ "วัตถุดิบ" ก่อนนะ',
+  hintOh:'ค่าใช้จ่ายที่ไม่ได้อยู่ในสูตรใดสูตรหนึ่ง เช่น ค่าน้ำมันรถไปซื้อของ ค่าส่ง ค่าที่ตลาด ค่าโทรศัพท์ ใส่เป็นยอดต่อเดือน และใส่ว่าเดือนหนึ่งทำขนมกี่ชิ้น แอปจะหารเฉลี่ยใส่ทุกชิ้นให้',
+  ohName:'รายการ',ohAmt:'ต่อเดือน (บาท)',addOh:'+ เพิ่มรายการ',ppm:'เดือนหนึ่งทำขนมรวมกี่ชิ้น (ทุกสูตร)',
+  ohTotal:'ค่าใช้จ่ายอื่นรวมต่อเดือน',ohEach:'บวกเพิ่มในขนมแต่ละชิ้น',
+  hintSale:'1) อบเสร็จ ให้เปิดล็อตใหม่  2) วันไหนขายได้ ก็บันทึกเข้าล็อตนั้น  3) ขายหมดหรือขนมไม่สดแล้ว ให้กดปิดล็อต ชิ้นที่เหลือจะนับเป็นของเสีย',
+  date:'วันเวลา',recipe:'ขนม',qty:'ขายได้กี่ชิ้น',made:'ทำได้กี่ชิ้น',madeK:'ทำ',soldK:'ขายได้',left:'เหลือ',sellRate:'ขายได้ %',unitPrice:'ราคาต่อชิ้น (บาท)',addSale:'+ บันทึกการขาย',
+  month:'เดือน',all:'ทั้งหมด',revenue:'ยอดขาย',cost:'ต้นทุน',profit:'กำไร',pieces:'จำนวนชิ้น',
+  confirmDel:'ลบรายการนี้ใช่ไหม?',restored:'กู้ข้อมูลเรียบร้อย!',badFile:'อ่านไฟล์นี้ไม่ได้',
+  piece:'ชิ้น',footer:'ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น กด "สำรองข้อมูล" เป็นระยะนะ'}
+};
+const UNITS={g:{en:'g',th:'กรัม',base:'g',f:1},kg:{en:'kg',th:'กิโลกรัม',base:'g',f:1000},
+  ml:{en:'ml',th:'มล.',base:'ml',f:1},l:{en:'L',th:'ลิตร',base:'ml',f:1000},
+  pc:{en:'piece',th:'ชิ้น/ฟอง',base:'pc',f:1}};
+const BASE={g:{en:'g',th:'กรัม'},ml:{en:'ml',th:'มล.'},pc:{en:'piece',th:'ชิ้น'}};
+
+let S=load(); let tab='ing';
+function blank(){return{lang:'en',ing:[],rec:[],oh:{items:[],ppm:0},batches:[]}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.ing)return migrate(Object.assign(blank(),d))}catch(e){}return blank()}
+function migrate(d){const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};if(!d.batches)d.batches=[];if(d.sales&&d.sales.length){d.sales.forEach(s=>{const m=num(s.made??s.qty);d.batches.push({id:s.id,date:s.date,recId:s.recId,name:s.name,made:m,cost:s.cost,price:s.price,closed:true,closedDate:s.date,sales:[{id:s.id+'s',date:s.date,qty:num(s.qty),price:s.price}]})})}delete d.sales;return d}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const t=k=>T[S.lang][k]||k;
+const nowLocal=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+const showDT=v=>String(v||'').replace('T',' ');
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const fmt=(n,d=2)=>(isFinite(n)?n:0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const CAKES=['🧁','🍰','🎂','🍪','🥐','🍩','🥧','🍞','🥖','🍮','🍫','🥮','🍡','🥯','🧇','🥞'];
+const OHI=['⛽','🔥','⚡','💧','🚚','🛵','🏪','📱','📦','🧾','➕'];
+const icoSel=(list,cur,on)=>`<label style="flex:0 0 74px;min-width:74px">${t('icon')}<select class="ico" onchange="${on}">${list.map(e=>`<option ${e===cur?'selected':''}>${e}</option>`).join('')}</select></label>`;
+const rIcon=r=>(r&&r.icon)||'🧁';
+const bIcon=b=>rIcon(S.rec.find(x=>x.id===b.recId));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- calculations ----------
+function ingUnitCost(i){const u=UNITS[i.unit]||UNITS.g;const q=num(i.size)*u.f;return q>0?num(i.price)/q:0}
+function ingBase(i){return (UNITS[i.unit]||UNITS.g).base}
+function ohTotal(){return S.oh.items.reduce((a,x)=>a+num(x.amt),0)}
+function ohPerPiece(){const p=num(S.oh.ppm);return p>0?ohTotal()/p:0}
+function recCalc(r){
+  const ingCost=r.items.reduce((a,l)=>{const i=S.ing.find(x=>x.id===l.ingId);return a+(i?ingUnitCost(i)*num(l.amt):0)},0);
+  const y=Math.max(num(r.yield),0);
+  const batch=ingCost+num(r.gas)+num(r.other)+num(r.pack)*y;
+  const oh=ohPerPiece();
+  const piece=y>0?batch/y+oh:0;
+  const price=num(r.price);
+  const pp=price-piece;
+  const m=num(r.target);
+  const sug=m<100&&piece>0?Math.ceil(piece/(1-m/100)):0;
+  return{ingCost,batch,oh,piece,pp,pb:pp*y,margin:price>0?pp/price*100:0,sug};
+}
+
+// ---------- UI ----------
+function render(){
+  document.documentElement.lang=S.lang;
+  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
+  document.getElementById('langBtn').textContent=S.lang==='en'?'ไทย':'English';
+  document.title=t('title');
+  const tabs=[['ing','tabIng'],['rec','tabRec'],['oh','tabOh'],['sale','tabSale'],['sum','tabSum']];
+  document.getElementById('tabs').innerHTML=tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${t(l)}</button>`).join('');
+  const app=document.getElementById('app');
+  app.innerHTML=({ing:viewIng,rec:viewRec,oh:viewOh,sale:viewSale,sum:viewSum})[tab]();
+}
+function toggleLang(){S.lang=S.lang==='en'?'th':'en';save();render()}
+function unitOpts(sel){return Object.keys(UNITS).map(k=>`<option value="${k}" ${k===sel?'selected':''}>${UNITS[k][S.lang]}</option>`).join('')}
+
+// Ingredients
+function viewIng(){
+  let h=`<div class="hint">${t('hintIng')}</div>`;
+  if(!S.ing.length) h+=`<div class="card empty">${t('empty')}<br><br><button class="btn ghost" onclick="loadSample()">${t('sample')}</button></div>`;
+  h+='<div class="grid2">';
+  S.ing.forEach(i=>{h+=`<div class="card"><div class="row">
+    <label style="flex:2;min-width:160px">${t('name')}<input value="${esc(i.name)}" oninput="setIng('${i.id}','name',this.value)"></label>
+    <button class="del" onclick="delIng('${i.id}')">✕</button></div>
+    <div class="row" style="margin-top:6px"><label>${t('bought')}<input type="datetime-local" value="${esc(i.bought)}" oninput="setIng('${i.id}','bought',this.value)"></label></div>
+    <div class="row" style="margin-top:6px">
+    <label>${t('price')}<input type="number" inputmode="decimal" value="${esc(i.price)}" oninput="setIng('${i.id}','price',this.value)"></label>
+    <label>${t('size')}<input type="number" inputmode="decimal" value="${esc(i.size)}" oninput="setIng('${i.id}','size',this.value)"></label>
+    <label>${t('unit')}<select onchange="setIng('${i.id}','unit',this.value)">${unitOpts(i.unit)}</select></label></div>
+    <div class="calc" id="ic_${i.id}">${ingCalcText(i)}</div></div>`});
+  h+='</div>';
+  h+=`<button class="btn" onclick="addIng()">${t('addIng')}</button>`;
+  return h;
+}
+function ingCalcText(i){return `${t('perUnit')} 1 ${BASE[ingBase(i)][S.lang]} = ฿${fmt(ingUnitCost(i),3)}`}
+function addIng(){S.ing.push({id:uid(),name:'',price:'',size:'',unit:'g',bought:nowLocal()});save();render()}
+function setIng(id,k,v){const i=S.ing.find(x=>x.id===id);if(!i)return;i[k]=v;save();
+  const e=document.getElementById('ic_'+id);if(e)e.textContent=ingCalcText(i)}
+function delIng(id){if(!confirm(t('confirmDel')))return;S.ing=S.ing.filter(x=>x.id!==id);
+  S.rec.forEach(r=>r.items=r.items.filter(l=>l.ingId!==id));save();render()}
+
+// Recipes
+function viewRec(){
+  let h=`<div class="hint">${t('hintRec')}</div>`;
+  if(!S.ing.length) h+=`<div class="hint">${t('noIng')}</div>`;
+  if(!S.rec.length) h+=`<div class="card empty">${t('empty')}</div>`;
+  S.rec.forEach(r=>{
+    h+=`<div class="card"><div class="row">
+      ${icoSel(CAKES,rIcon(r),`setRec('${r.id}','icon',this.value)`)}<label style="flex:2;min-width:160px">${t('recName')}<input value="${esc(r.name)}" oninput="setRec('${r.id}','name',this.value)"></label>
+      <label>${t('yield')}<input type="number" inputmode="numeric" value="${esc(r.yield)}" oninput="setRec('${r.id}','yield',this.value)"></label>
+      <button class="del" onclick="delRec('${r.id}')">✕</button></div>
+      <h4>${t('ingUsed')}</h4>`;
+    r.items.forEach((l,ix)=>{
+      const i=S.ing.find(x=>x.id===l.ingId);
+      const bu=i?BASE[ingBase(i)][S.lang]:'';
+      h+=`<div class="ingline">
+        <select onchange="setLine('${r.id}',${ix},'ingId',this.value,true)"><option value="">${t('pickIng')}</option>
+          ${S.ing.map(x=>`<option value="${x.id}" ${x.id===l.ingId?'selected':''}>${esc(x.name||'?')}</option>`).join('')}</select>
+        <label>${t('amount')} ${bu?'('+bu+')':''}<input type="number" inputmode="decimal" value="${esc(l.amt)}" oninput="setLine('${r.id}',${ix},'amt',this.value)"></label>
+        <span class="cost" id="lc_${r.id}_${ix}">${lineCost(l)}</span>
+        <button class="del" onclick="delLine('${r.id}',${ix})">✕</button></div>`});
+    h+=`<button class="btn ghost small" onclick="addLine('${r.id}')">${t('addLine')}</button>
+      <h4>${t('extras')}</h4><div class="row">
+      <label>${t('pack')}<input type="number" inputmode="decimal" value="${esc(r.pack)}" oninput="setRec('${r.id}','pack',this.value)"></label>
+      <label>${t('gas')}<input type="number" inputmode="decimal" value="${esc(r.gas)}" oninput="setRec('${r.id}','gas',this.value)"></label>
+      <label>${t('other')}<input type="number" inputmode="decimal" value="${esc(r.other)}" oninput="setRec('${r.id}','other',this.value)"></label></div>
+      <div class="row" style="margin-top:8px">
+      <label>${t('sellPrice')}<input type="number" inputmode="decimal" value="${esc(r.price)}" oninput="setRec('${r.id}','price',this.value)"></label>
+      <label>${t('target')}<input type="number" inputmode="decimal" value="${esc(r.target)}" oninput="setRec('${r.id}','target',this.value)"></label></div>
+      <div class="summary" id="rs_${r.id}">${recSummary(r)}</div></div>`;
+  });
+  h+=`<button class="btn" onclick="addRec()">${t('addRec')}</button>`;
+  return h;
+}
+function lineCost(l){const i=S.ing.find(x=>x.id===l.ingId);return i?'฿'+fmt(ingUnitCost(i)*num(l.amt)):''}
+function recSummary(r){
+  const c=recCalc(r);const cls=v=>v>=0?'pos':'neg';
+  return `<table>
+   <tr><td>${t('ingCost')}</td><td>฿${fmt(c.ingCost)}</td></tr>
+   <tr><td>${t('batchCost')}</td><td>฿${fmt(c.batch)}</td></tr>
+   <tr><td>${t('ohPiece')}</td><td>฿${fmt(c.oh)}</td></tr>
+   <tr><td class="big">${t('costPiece')}</td><td class="big">฿${fmt(c.piece)}</td></tr>
+   ${num(r.price)>0?`<tr><td>${t('profitPiece')}</td><td class="${cls(c.pp)}">฿${fmt(c.pp)}</td></tr>
+   <tr><td>${t('profitBatch')}</td><td class="${cls(c.pb)}">฿${fmt(c.pb)}</td></tr>
+   <tr><td>${t('margin')}</td><td class="${cls(c.pp)}">${fmt(c.margin,1)}%</td></tr>`:''}
+   ${c.sug?`<tr><td>${t('suggest')} (${fmt(num(r.target),0)}%)</td><td class="big">฿${fmt(c.sug,0)}</td></tr>`:''}
+  </table>`;
+}
+function refreshRec(r){const e=document.getElementById('rs_'+r.id);if(e)e.innerHTML=recSummary(r);
+  r.items.forEach((l,ix)=>{const c=document.getElementById(`lc_${r.id}_${ix}`);if(c)c.textContent=lineCost(l)})}
+function addRec(){S.rec.push({id:uid(),name:'',yield:'',items:[{ingId:'',amt:''}],pack:'',gas:'',other:'',price:'',target:'40'});save();render()}
+function setRec(id,k,v){const r=S.rec.find(x=>x.id===id);if(!r)return;r[k]=v;save();refreshRec(r)}
+function delRec(id){if(!confirm(t('confirmDel')))return;S.rec=S.rec.filter(x=>x.id!==id);save();render()}
+function addLine(id){const r=S.rec.find(x=>x.id===id);r.items.push({ingId:'',amt:''});save();render()}
+function setLine(id,ix,k,v,re){const r=S.rec.find(x=>x.id===id);r.items[ix][k]=v;save();re?render():refreshRec(r)}
+function delLine(id,ix){const r=S.rec.find(x=>x.id===id);r.items.splice(ix,1);save();render()}
+
+// Other costs
+function viewOh(){
+  let h=`<div class="hint">${t('hintOh')}</div><div class="card">`;
+  S.oh.items.forEach(o=>{h+=`<div class="row" style="margin-bottom:6px">
+    ${icoSel(OHI,o.icon||'⛽',`setOh('${o.id}','icon',this.value)`)}<label style="flex:2">${t('ohName')}<input value="${esc(o.name)}" oninput="setOh('${o.id}','name',this.value)"></label>
+    <label>${t('ohAmt')}<input type="number" inputmode="decimal" value="${esc(o.amt)}" oninput="setOh('${o.id}','amt',this.value)"></label>
+    <button class="del" onclick="delOh('${o.id}')">✕</button></div>`});
+  h+=`<button class="btn ghost small" onclick="addOh()">${t('addOh')}</button>
+    <div class="row" style="margin-top:12px"><label>${t('ppm')}<input type="number" inputmode="numeric" value="${esc(S.oh.ppm)}" oninput="S.oh.ppm=this.value;save();refreshOh()"></label></div>
+    <div class="summary" id="ohs">${ohSummary()}</div></div>`;
+  return h;
+}
+function ohSummary(){return `<table><tr><td>${t('ohTotal')}</td><td>฿${fmt(ohTotal())}</td></tr>
+  <tr><td class="big">${t('ohEach')}</td><td class="big">฿${fmt(ohPerPiece())}</td></tr></table>`}
+function refreshOh(){const e=document.getElementById('ohs');if(e)e.innerHTML=ohSummary()}
+function addOh(){S.oh.items.push({id:uid(),name:'',amt:''});save();render()}
+function setOh(id,k,v){const o=S.oh.items.find(x=>x.id===id);o[k]=v;save();refreshOh()}
+function delOh(id){if(!confirm(t('confirmDel')))return;S.oh.items=S.oh.items.filter(x=>x.id!==id);save();render()}
+
+// Batches & sales
+let saleMonth=nowLocal().slice(0,7), sumMode='day';
+const bSold=b=>b.sales.reduce((a,x)=>a+num(x.qty),0);
+const bRev=b=>b.sales.reduce((a,x)=>a+num(x.qty)*num(x.price),0);
+const bLeft=b=>num(b.made)-bSold(b);
+function monthSel(){
+  const ms=[...new Set(S.batches.map(b=>(b.closedDate||b.date).slice(0,7)).concat([nowLocal().slice(0,7)]))].sort().reverse();
+  return `<label style="max-width:200px">${t('month')}<select onchange="saleMonth=this.value;render()">
+    <option value="all" ${saleMonth==='all'?'selected':''}>${t('all')}</option>
+    ${ms.map(m=>`<option value="${m}" ${m===saleMonth?'selected':''}>${m}</option>`).join('')}</select></label>`;
+}
+function viewSale(){
+  let h=`<div class="hint">${t('hintSale')}</div>`;
+  if(!S.rec.length) return h+`<div class="hint">${t('noRec')}</div>`;
+  const open=S.batches.filter(b=>!b.closed).sort((a,b)=>a.date.localeCompare(b.date));
+  const stock=open.reduce((a,b)=>a+bLeft(b),0);
+  h+=`<div class="card"><h3>${t('newBatch')}</h3><div class="row">
+    <label>${t('bakedOn')}<input type="datetime-local" id="nd" value="${nowLocal()}"></label>
+    <label style="flex:2">${t('recipe')}<select id="nr" onchange="const r=S.rec.find(x=>x.id===this.value);if(r)document.getElementById('np').value=r.price">
+      ${S.rec.map(r=>`<option value="${r.id}">${rIcon(r)} ${esc(r.name||'?')}</option>`).join('')}</select></label></div>
+    <div class="row" style="margin-top:6px">
+    <label>${t('made')}<input type="number" inputmode="numeric" id="nm"></label>
+    <label>${t('unitPrice')}<input type="number" inputmode="decimal" id="np" value="${esc(S.rec[0]?.price||'')}"></label>
+    <button class="btn" onclick="addBatch()">${t('addBatch')}</button></div></div>`;
+  h+=`<h3>${t('openB')} · ${t('inStock')}: ${fmt(stock,0)}</h3>`;
+  if(!open.length) h+=`<div class="card empty">${t('empty')}</div>`;
+  h+='<div class="grid2">';
+  open.forEach(b=>{
+    const sold=bSold(b), pct=num(b.made)?Math.min(sold/num(b.made)*100,100):0;
+    h+=`<div class="card"><div class="row" style="align-items:center">
+      <div style="flex:1"><b style="font-size:1.05rem">${bIcon(b)} ${esc(b.name)}</b><br><span style="font-size:.8rem;color:var(--muted)">${t('bakedOn')}: ${showDT(b.date)}</span></div>
+      <button class="del" onclick="delBatch('${b.id}')">✕</button></div>
+      <div style="display:flex;justify-content:space-between;margin:10px 0 4px;font-size:.9rem">
+        <span>${t('madeK')} <b>${fmt(num(b.made),0)}</b></span><span>${t('soldK')} <b class="pos">${fmt(sold,0)}</b></span><span>${t('left')} <b>${fmt(bLeft(b),0)}</b></span></div>
+      <div style="height:8px;background:var(--line);border-radius:4px"><div style="height:8px;width:${pct}%;background:var(--good);border-radius:4px"></div></div>
+      <div class="row" style="margin-top:10px">
+        <label>${t('soldOn')}<input type="datetime-local" id="bd_${b.id}" value="${nowLocal()}"></label></div>
+      <div class="row" style="margin-top:6px">
+        <label>${t('qty')}<input type="number" inputmode="numeric" id="bq_${b.id}"></label>
+        <label>${t('unitPrice')}<input type="number" inputmode="decimal" id="bp_${b.id}" value="${esc(b.price)}"></label>
+        <button class="btn" onclick="sell('${b.id}')">${t('sellNow')}</button></div>
+      ${b.sales.length?`<table class="list" style="margin-top:8px">${b.sales.slice().sort((x,y)=>x.date.localeCompare(y.date)).map(x=>`<tr><td>${showDT(x.date)}</td><td class="n">${x.qty} × ฿${fmt(num(x.price),0)}</td><td><button class="del" onclick="delSaleIn('${b.id}','${x.id}')">✕</button></td></tr>`).join('')}</table>`:''}
+      <div style="margin-top:10px;text-align:right"><button class="btn ghost small" onclick="closeBatch('${b.id}')">${t('closeB')}</button></div></div>`;
+  });
+  h+='</div>';
+  const closed=S.batches.filter(b=>b.closed&&(saleMonth==='all'||(b.closedDate||b.date).startsWith(saleMonth))).sort((a,b)=>(b.closedDate||b.date).localeCompare(a.closedDate||a.date));
+  h+=`<h3 style="margin-top:18px">${t('closedB')}</h3><div class="row" style="margin-bottom:8px">${monthSel()}</div>`;
+  if(!closed.length) h+=`<div class="card empty">${t('empty')}</div>`;
+  else h+=`<div class="card" style="overflow-x:auto"><table class="list"><tr><th>${t('bakedOn')}</th><th>${t('recipe')}</th><th class="n">${t('madeK')}</th><th class="n">${t('soldK')}</th><th class="n">${t('waste')}</th><th class="n">${t('profit')}</th><th></th></tr>
+    ${closed.map(b=>{const p=bRev(b)-num(b.made)*b.cost;return `<tr><td>${showDT(b.date)}</td><td>${bIcon(b)} ${esc(b.name)}</td><td class="n">${fmt(num(b.made),0)}</td><td class="n">${fmt(bSold(b),0)}</td><td class="n ${bLeft(b)>0?'neg':''}">${fmt(Math.max(bLeft(b),0),0)}</td><td class="n ${p>=0?'pos':'neg'}">฿${fmt(p,0)}</td><td><button class="btn ghost small" onclick="reopen('${b.id}')">${t('reopen')}</button></td></tr>`}).join('')}</table></div>`;
+  return h;
+}
+function addBatch(){
+  const r=S.rec.find(x=>x.id===document.getElementById('nr').value);
+  const m=num(document.getElementById('nm').value), p=num(document.getElementById('np').value), d=document.getElementById('nd').value;
+  if(!r||m<=0||!d)return;
+  S.batches.push({id:uid(),date:d,recId:r.id,name:r.name,made:m,cost:recCalc(r).piece,price:p,closed:false,sales:[]});
+  save();render();
+}
+function sell(id){
+  const b=S.batches.find(x=>x.id===id);
+  const q=num(document.getElementById('bq_'+id).value), p=num(document.getElementById('bp_'+id).value), d=document.getElementById('bd_'+id).value;
+  if(q<=0||!d)return;
+  b.sales.push({id:uid(),date:d,qty:q,price:p});
+  if(bLeft(b)<=0){b.closed=true;b.closedDate=d}
+  save();render();
+}
+function delSaleIn(bid,sid){if(!confirm(t('confirmDel')))return;const b=S.batches.find(x=>x.id===bid);b.sales=b.sales.filter(x=>x.id!==sid);save();render()}
+function closeBatch(id){const b=S.batches.find(x=>x.id===id);if(!confirm(t('closeConfirm')+fmt(Math.max(bLeft(b),0),0)))return;
+  b.closed=true;b.closedDate=nowLocal();save();render()}
+function reopen(id){const b=S.batches.find(x=>x.id===id);b.closed=false;delete b.closedDate;save();render()}
+function delBatch(id){if(!confirm(t('confirmDel')))return;S.batches=S.batches.filter(x=>x.id!==id);save();render()}
+
+function viewByItem(){
+  const inM=d=>saleMonth==='all'||d.startsWith(saleMonth), g={};
+  S.batches.forEach(b=>{const o=g[b.name]||(g[b.name]={sold:0,left:0,waste:0,rev:0,cost:0});o.ic=bIcon(b);
+    b.sales.forEach(x=>{if(!inM(x.date))return;o.sold+=num(x.qty);o.rev+=num(x.qty)*num(x.price);o.cost+=num(x.qty)*b.cost});
+    if(!b.closed)o.left+=Math.max(bLeft(b),0);
+    else if(b.closedDate&&inM(b.closedDate)&&bLeft(b)>0){o.waste+=bLeft(b);o.cost+=bLeft(b)*b.cost}});
+  const ks=Object.keys(g).filter(k=>{const o=g[k];return o.sold||o.left||o.waste}).sort((a,b)=>(g[b].rev-g[b].cost)-(g[a].rev-g[a].cost));
+  if(!ks.length) return '';
+  const r=(k,o,b)=>{const p=o.rev-o.cost,c=p>=0?'pos':'neg';return `<tr ${b?'style="font-weight:700;background:var(--soft)"':''}><td>${b?k:o.ic+' '+esc(k)}</td><td class="n">${fmt(o.sold,0)}</td><td class="n">${fmt(o.left,0)}</td><td class="n ${o.waste>0?'neg':''}">${fmt(o.waste,0)}</td><td class="n">฿${fmt(o.rev,0)}</td><td class="n">฿${fmt(o.cost,0)}</td><td class="n ${c}">฿${fmt(p,0)}</td><td class="n ${c}">${o.rev?fmt(p/o.rev*100,0)+'%':'-'}</td></tr>`};
+  const tot=ks.reduce((a,k)=>{for(const f in a)a[f]+=g[k][f];return a},{sold:0,left:0,waste:0,rev:0,cost:0});
+  return `<h3>${t('byItem')} · ${saleMonth==='all'?t('all'):saleMonth}</h3><div class="card" style="overflow-x:auto"><table class="list"><tr><th>${t('recipe')}</th><th class="n">${t('soldK')}</th><th class="n">${t('onHand')}</th><th class="n">${t('waste')}</th><th class="n">${t('revenue')}</th><th class="n">${t('cost')}</th><th class="n">${t('profit')}</th><th class="n">${t('pct')}</th></tr>
+    ${ks.map(k=>r(k,g[k])).join('')}${r(t('all'),tot,true)}</table></div><h3>${t(sumMode==='day'?'daily':'monthly')}</h3>`;
+}
+function viewSum(){
+  const L=sumMode==='day'?10:7, inM=d=>sumMode!=='day'||saleMonth==='all'||d.startsWith(saleMonth);
+  const g={}, G=k=>g[k]||(g[k]={made:0,sold:0,waste:0,rev:0,cost:0});
+  S.batches.forEach(b=>{
+    if(inM(b.date)) G(b.date.slice(0,L)).made+=num(b.made);
+    b.sales.forEach(x=>{if(!inM(x.date))return;const o=G(x.date.slice(0,L));o.sold+=num(x.qty);o.rev+=num(x.qty)*num(x.price);o.cost+=num(x.qty)*b.cost});
+    if(b.closed&&b.closedDate&&inM(b.closedDate)&&bLeft(b)>0){const o=G(b.closedDate.slice(0,L));o.waste+=bLeft(b);o.cost+=bLeft(b)*b.cost}
+  });
+  const keys=Object.keys(g).sort().reverse();
+  const tot=keys.reduce((a,k)=>{for(const f in g[k])a[f]+=g[k][f];return a},{made:0,sold:0,waste:0,rev:0,cost:0});
+  const btn=(m,l)=>`<button class="btn small ${sumMode===m?'':'ghost'}" onclick="sumMode='${m}';render()">${t(l)}</button>`;
+  let h=`<div class="hint">${t('hintSum')}</div><div class="row" style="margin-bottom:12px;align-items:center">${btn('day','daily')}${btn('month','monthly')}${monthSel()}</div>`+viewByItem();
+  if(!keys.length) return h+`<div class="card empty">${t('empty')}</div>`;
+  const maxP=Math.max(...keys.map(k=>Math.abs(g[k].rev-g[k].cost)),1);
+  const row=(k,o,b)=>{const p=o.rev-o.cost;return `<tr ${b?'style="font-weight:700;background:var(--soft)"':''}><td>${k}</td><td class="n">${fmt(o.made,0)}</td><td class="n">${fmt(o.sold,0)}</td><td class="n ${o.waste>0?'neg':''}">${fmt(o.waste,0)}</td><td class="n">฿${fmt(o.rev,0)}</td><td class="n">฿${fmt(o.cost,0)}</td><td class="n ${p>=0?'pos':'neg'}">฿${fmt(p,0)}
+    ${b?'':`<div style="height:5px;border-radius:3px;margin-top:3px;margin-left:auto;width:${Math.round(Math.abs(p)/maxP*100)}%;background:${p>=0?'var(--good)':'var(--bad)'}"></div>`}</td><td class="n ${p>=0?'pos':'neg'}">${o.rev?fmt(p/o.rev*100,0)+'%':'-'}</td></tr>`};
+  h+=`<div class="card" style="overflow-x:auto"><table class="list"><tr><th>${t('period')}</th><th class="n">${t('madeK')}</th><th class="n">${t('soldK')}</th><th class="n">${t('waste')}</th><th class="n">${t('revenue')}</th><th class="n">${t('cost')}</th><th class="n">${t('profit')}</th><th class="n">${t('pct')}</th></tr>
+    ${keys.map(k=>row(k,g[k])).join('')}${row(t('all'),tot,true)}</table></div>`;
+  return h;
+}
+
+// Backup
+function exportData(){const b=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bakery-backup-'+nowLocal().slice(0,10)+'.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d.ing)throw 0;S=migrate(Object.assign(blank(),d));save();render();alert(t('restored'))}catch(x){alert(t('badFile'))}};
+  rd.readAsText(f);e.target.value=''}
+
+// Sample data
+function loadSample(){
+  const th=S.lang==='th';
+  const I=(n,p,s,u)=>({id:uid(),name:n,price:p,size:s,unit:u,bought:nowLocal()});
+  const flour=I(th?'แป้งเค้ก':'Cake flour',45,1,'kg'), sugar=I(th?'น้ำตาลทราย':'Sugar',28,1,'kg'),
+        butter=I(th?'เนยสด':'Butter',165,454,'g'), egg=I(th?'ไข่ไก่':'Eggs',120,30,'pc'), milk=I(th?'นมสด':'Fresh milk',52,1,'l');
+  S.ing=[flour,sugar,butter,egg,milk];
+  S.rec=[{id:uid(),name:th?'บราวนี่':'Brownie',yield:16,items:[{ingId:flour.id,amt:150},{ingId:sugar.id,amt:200},{ingId:butter.id,amt:180},{ingId:egg.id,amt:3},{ingId:milk.id,amt:50}],pack:3,gas:15,other:0,price:25,target:40}];
+  S.oh={items:[{id:uid(),name:th?'ค่าน้ำมันรถไปซื้อของ':'Fuel for shopping trips',amt:600},{id:uid(),name:th?'ค่าส่งของ':'Delivery',amt:400}],ppm:400};
+  save();render();
+}
+render();
+</script>
+</body>
+</html>
