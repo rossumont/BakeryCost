@@ -38,6 +38,7 @@
   .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:1rem;cursor:pointer}
   .btn.ghost{background:#fff;color:var(--brand);border:1px dashed var(--brand)}
   .btn.small{padding:6px 10px;font-size:.85rem}
+  .newing{background:var(--soft);border-radius:8px;padding:8px;margin:-2px 0 10px}
   .ico{font-size:1.3rem;padding:6px 4px;text-align:center}
   .del{background:none;border:none;color:var(--bad);font-size:1.3rem;cursor:pointer;padding:6px 8px}
   .calc{font-size:.85rem;color:var(--good);margin-top:6px}
@@ -86,12 +87,12 @@ const T={
   perUnit:'Cost per',sample:'Load example data',empty:'Nothing here yet.',
   hintRec:'Build each recipe: choose ingredients and how much you use per batch, plus how many pieces the batch makes.',
   recName:'Recipe name',yield:'Pieces per batch',addRec:'+ Add recipe',ingUsed:'Ingredients used per batch',
-  pickIng:'— choose ingredient —',amount:'Amount',addLine:'+ Add ingredient line',
+  pickIng:'Type or choose…',ingName:'Ingredient',newIngNote:'Fill in what you paid for',amount:'Amount',addLine:'+ Add ingredient line',
   extras:'Extra costs',pack:'📦 Box / bag per piece (฿)',gas:'🔥 Gas / electricity per batch (฿)',other:'➕ Other per batch (฿)',icon:'Icon',
   ingCost:'Ingredients per batch',batchCost:'Total cost per batch',ohPiece:'Share of other costs per piece',
   costPiece:'Real cost per piece',sellPrice:'Your selling price per piece (฿)',profitPiece:'Profit per piece',
   profitBatch:'Profit per batch',margin:'Profit margin',target:'Target profit %',suggest:'Suggested price',
-  noIng:'Add ingredients in the Ingredients tab first.',
+  noIng:'Type an ingredient name in the recipe below. New names are added to the Ingredients tab automatically.',
   hintOh:'Costs that aren\'t in one recipe: fuel for shopping trips, delivery, market stall fee, phone, etc. Enter a monthly amount, and how many pieces you make per month. The app spreads these costs over every piece.',
   ohName:'Expense',ohAmt:'Per month (฿)',addOh:'+ Add expense',ppm:'Pieces made per month (all recipes)',
   ohTotal:'Total other costs per month',ohEach:'Added to each piece',
@@ -107,12 +108,12 @@ const T={
   perUnit:'ราคาต่อ',sample:'ใส่ข้อมูลตัวอย่าง',empty:'ยังไม่มีข้อมูล',
   hintRec:'สร้างสูตรขนม: เลือกวัตถุดิบ ใส่ปริมาณที่ใช้ต่อ 1 รอบ และรอบนี้ได้ขนมกี่ชิ้น',
   recName:'ชื่อขนม',yield:'ได้กี่ชิ้นต่อรอบ',addRec:'+ เพิ่มสูตร',ingUsed:'วัตถุดิบที่ใช้ต่อรอบ',
-  pickIng:'— เลือกวัตถุดิบ —',amount:'ปริมาณ',addLine:'+ เพิ่มวัตถุดิบในสูตร',
+  pickIng:'พิมพ์หรือเลือก…',ingName:'วัตถุดิบ',newIngNote:'กรอกราคาที่ซื้อมาของ',amount:'ปริมาณ',addLine:'+ เพิ่มวัตถุดิบในสูตร',
   extras:'ค่าใช้จ่ายเพิ่ม',pack:'📦 กล่อง/ถุง ต่อชิ้น (บาท)',gas:'🔥 ค่าแก๊ส/ไฟ ต่อรอบ (บาท)',other:'➕ อื่นๆ ต่อรอบ (บาท)',icon:'ไอคอน',
   ingCost:'ค่าวัตถุดิบต่อรอบ',batchCost:'ต้นทุนรวมต่อรอบ',ohPiece:'ค่าใช้จ่ายอื่นที่หารมาต่อชิ้น',
   costPiece:'ต้นทุนจริงต่อชิ้น',sellPrice:'ราคาขายต่อชิ้น (บาท)',profitPiece:'กำไรต่อชิ้น',
   profitBatch:'กำไรต่อรอบ',margin:'กำไรคิดเป็น',target:'อยากได้กำไรกี่ %',suggest:'ราคาที่ควรขาย',
-  noIng:'ไปเพิ่มวัตถุดิบในแท็บ "วัตถุดิบ" ก่อนนะ',
+  noIng:'พิมพ์ชื่อวัตถุดิบในสูตรด้านล่างได้เลย ชื่อใหม่จะถูกเพิ่มเข้าแท็บวัตถุดิบให้เอง',
   hintOh:'ค่าใช้จ่ายที่ไม่ได้อยู่ในสูตรใดสูตรหนึ่ง เช่น ค่าน้ำมันรถไปซื้อของ ค่าส่ง ค่าที่ตลาด ค่าโทรศัพท์ ใส่เป็นยอดต่อเดือน และใส่ว่าเดือนหนึ่งทำขนมกี่ชิ้น แอปจะหารเฉลี่ยใส่ทุกชิ้นให้',
   ohName:'รายการ',ohAmt:'ต่อเดือน (บาท)',addOh:'+ เพิ่มรายการ',ppm:'เดือนหนึ่งทำขนมรวมกี่ชิ้น (ทุกสูตร)',
   ohTotal:'ค่าใช้จ่ายอื่นรวมต่อเดือน',ohEach:'บวกเพิ่มในขนมแต่ละชิ้น',
@@ -206,6 +207,7 @@ function delIng(id){if(!confirm(t('confirmDel')))return;S.ing=S.ing.filter(x=>x.
 function viewRec(){
   let h=`<div class="hint">${t('hintRec')}</div>`;
   if(!S.ing.length) h+=`<div class="hint">${t('noIng')}</div>`;
+  h+=`<datalist id="ingdl">${S.ing.map(x=>`<option value="${esc(x.name)}">`).join('')}</datalist>`;
   if(!S.rec.length) h+=`<div class="card empty">${t('empty')}</div>`;
   S.rec.forEach(r=>{
     h+=`<div class="card"><div class="row">
@@ -216,12 +218,16 @@ function viewRec(){
     r.items.forEach((l,ix)=>{
       const i=S.ing.find(x=>x.id===l.ingId);
       const bu=i?BASE[ingBase(i)][S.lang]:'';
+      const need=i&&!(num(i.price)>0&&num(i.size)>0);
       h+=`<div class="ingline">
-        <select onchange="setLine('${r.id}',${ix},'ingId',this.value,true)"><option value="">${t('pickIng')}</option>
-          ${S.ing.map(x=>`<option value="${x.id}" ${x.id===l.ingId?'selected':''}>${esc(x.name||'?')}</option>`).join('')}</select>
+        <label>${t('ingName')}<input list="ingdl" placeholder="${t('pickIng')}" value="${esc(i?i.name:'')}" onchange="setLineName('${r.id}',${ix},this.value)"></label>
         <label>${t('amount')} ${bu?'('+bu+')':''}<input type="number" inputmode="decimal" value="${esc(l.amt)}" oninput="setLine('${r.id}',${ix},'amt',this.value)"></label>
         <span class="cost" id="lc_${r.id}_${ix}">${lineCost(l)}</span>
-        <button class="del" onclick="delLine('${r.id}',${ix})">✕</button></div>`});
+        <button class="del" onclick="delLine('${r.id}',${ix})">✕</button></div>
+        ${need?`<div class="newing"><div style="font-size:.8rem;color:var(--brand);margin-bottom:4px">${t('newIngNote')}: <b>${esc(i.name)}</b></div><div class="row">
+          <label>${t('price')}<input type="number" inputmode="decimal" value="${esc(i.price)}" onchange="setIngR('${i.id}','price',this.value)"></label>
+          <label>${t('size')}<input type="number" inputmode="decimal" value="${esc(i.size)}" onchange="setIngR('${i.id}','size',this.value)"></label>
+          <label>${t('unit')}<select onchange="setIngR('${i.id}','unit',this.value)">${unitOpts(i.unit)}</select></label></div></div>`:''}`});
     h+=`<button class="btn ghost small" onclick="addLine('${r.id}')">${t('addLine')}</button>
       <h4>${t('extras')}</h4><div class="row">
       <label>${t('pack')}<input type="number" inputmode="decimal" value="${esc(r.pack)}" oninput="setRec('${r.id}','pack',this.value)"></label>
@@ -256,6 +262,11 @@ function setRec(id,k,v){const r=S.rec.find(x=>x.id===id);if(!r)return;r[k]=v;sav
 function delRec(id){if(!confirm(t('confirmDel')))return;S.rec=S.rec.filter(x=>x.id!==id);save();render()}
 function addLine(id){const r=S.rec.find(x=>x.id===id);r.items.push({ingId:'',amt:''});save();render()}
 function setLine(id,ix,k,v,re){const r=S.rec.find(x=>x.id===id);r.items[ix][k]=v;save();re?render():refreshRec(r)}
+function setLineName(id,ix,v){const r=S.rec.find(x=>x.id===id);v=v.trim();if(!v){r.items[ix].ingId='';save();render();return}
+  let i=S.ing.find(x=>x.name.trim().toLowerCase()===v.toLowerCase());
+  if(!i){i={id:uid(),name:v,price:'',size:'',unit:'g',bought:nowLocal()};S.ing.push(i)}
+  r.items[ix].ingId=i.id;save();render()}
+function setIngR(id,k,v){const i=S.ing.find(x=>x.id===id);i[k]=v;save();render()}
 function delLine(id,ix){const r=S.rec.find(x=>x.id===id);r.items.splice(ix,1);save();render()}
 
 // Other costs
@@ -290,7 +301,7 @@ function monthSel(){
 }
 function viewSale(){
   let h=`<div class="hint">${t('hintSale')}</div>`;
-  if(!S.rec.length) return h+`<div class="hint">${t('noRec')}</div>`;
+  if(!S.rec.length) return h+`<div class="hint">${t('noRec')}<br><br><button class="btn small" onclick="tab='rec';addRec()">${t('addRec')}</button></div>`;
   const open=S.batches.filter(b=>!b.closed).sort((a,b)=>a.date.localeCompare(b.date));
   const stock=open.reduce((a,b)=>a+bLeft(b),0);
   h+=`<div class="card"><h3>${t('newBatch')}</h3><div class="row">
